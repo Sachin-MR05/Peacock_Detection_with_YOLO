@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peacock Detection Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --darker: #111827;
+            --light: #f9fafb;
+            --border: #e5e7eb;
+            --text: #374151;
+            --text-light: #9ca3af;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            width: 280px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logo {
+            font-size: 28px;
+        }
+
+        .sidebar-title {
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+        }
+
+        .alerts-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .alerts-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .alert-item {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 3px solid var(--success);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            color: var(--success);
+            font-size: 13px;
+            font-weight: 500;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        .alert-count {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--success);
+            margin-top: 10px;
+        }
+
+        .stats-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .stats-label {
+            font-size: 11px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .stats-value {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ========== MAIN CONTENT ========== */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .threshold-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px 20px;
+            border-radius: 8px;
+        }
+
+        .threshold-label {
+            color: var(--text-light);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 200px;
+            height: 6px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .threshold-value {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* ========== DISPLAY FRAME ========== */
+        .display-frame {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            aspect-ratio: 16 / 9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .display-frame canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            object-fit: contain;
+        }
+
+        .display-frame img {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            object-fit: contain;
+        }
+
+        .frame-placeholder {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        .frame-placeholder svg {
+            width: 80px;
+            height: 80px;
+            opacity: 0.5;
+            margin-bottom: 15px;
+        }
+
+        /* ========== SPRINKLER QUADRANTS ========== */
+        .quadrant-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .quadrant {
+            border: 1px dashed rgba(148, 163, 184, 0.35);
+            background: rgba(148, 163, 184, 0.08); /* transparent gray */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .quadrant-icon {
+            font-size: 26px;
+            opacity: 0.85;
+            filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.8));
+        }
+
+        .quadrant-label {
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: rgba(148, 163, 184, 0.9);
+            display: none;
+        }
+
+        .quadrant.active {
+            background: rgba(248, 113, 113, 0.22); /* transparent red */
+            border-color: rgba(248, 113, 113, 0.8);
+            box-shadow: inset 0 0 24px rgba(248, 113, 113, 0.5);
+        }
+
+        .quadrant.active .quadrant-icon {
+            animation: sprinklerPulse 0.6s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 10px rgba(248, 113, 113, 0.9));
+        }
+
+        .quadrant.active .quadrant-label {
+            display: block;
+            color: #f87171; /* red text: Sprinkler On */
+        }
+
+        @keyframes sprinklerPulse {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 0.9;
+            }
+            100% {
+                transform: translateY(-3px) scale(1.08);
+                opacity: 1;
+            }
+        }
+
+        /* ========== BUTTONS GRID ========== */
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .action-button {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05));
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            padding: 25px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .action-button:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.15));
+            border-color: rgba(99, 102, 241, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
+        }
+
+        .action-button:active {
+            transform: translateY(0);
+        }
+
+        .action-button svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .action-button.default {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .action-button.default:hover {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.15));
+            border-color: rgba(16, 185, 129, 0.6);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
+        }
+
+        /* ========== DETAILS PANEL ========== */
+        .details-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+        }
+
+        .details-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        .detection-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .detection-item {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 3px solid var(--success);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--success);
+        }
+
+        .detection-item strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .no-detections {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-light);
+            font-size: 13px;
+        }
+
+        /* ========== HIDDEN FILE INPUTS ========== */
+        input[type="file"] {
+            display: none;
+        }
+
+        /* ========== SCROLLBAR ========== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.7);
+        }
+
+        /* ========== LOADING ========== */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+        }
+
+        .spinner {
+            border: 4px solid rgba(99, 102, 241, 0.3);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 15px;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .threshold-control {
+                width: 100%;
+            }
+
+            .buttons-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .display-frame {
+                aspect-ratio: auto;
+                min-height: 300px;
+            }
+
+            .content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-logo">🦚</span>
+            <div class="sidebar-title">Peacock AI</div>
+        </div>
+
+        <div class="alerts-section">
+            <div class="alerts-label">Detection Alerts</div>
+            <div id="alertsList" style="min-height: 100px;">
+                <div style="color: var(--text-light); font-size: 12px; text-align: center; padding: 20px 0;">
+                    No detections yet
+                </div>
+            </div>
+            <div class="alert-count">
+                Total: <span id="totalCount">0</span>
+            </div>
+        </div>
+
+        <div class="stats-box">
+            <div class="stats-label">Last Detection</div>
+            <div class="stats-value" id="lastStat">-</div>
+        </div>
+
+        <div class="stats-box">
+            <div class="stats-label">Detection Mode</div>
+            <div class="stats-value" id="modeLabel" style="font-size: 14px; -webkit-text-fill-color: unset; background: unset; color: var(--text-light);">Ready</div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-title">Peacock Detection Dashboard</div>
+            <div class="threshold-control">
+                <label class="threshold-label">Confidence:</label>
+                <input type="range" id="confidenceSlider" min="0.1" max="0.99" step="0.05" value="0.2">
+                <span class="threshold-value"><span id="thresholdValue">0.20</span></span>
+            </div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+            <!-- DISPLAY FRAME -->
+            <div class="display-frame">
+                <canvas id="detectionCanvas" style="display: none;"></canvas>
+                <img id="resultImage" style="display: none;">
+                <div class="frame-placeholder" id="framePlaceholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p>Upload an image, video, or enable camera to start detection</p>
+                </div>
+                <!-- Quadrant-based sprinklers overlay -->
+                <div class="quadrant-overlay" id="quadrantOverlay">
+                    <div class="quadrant" id="quadrant-tl">
+                        <span class="quadrant-icon">🚿</span>
+                        <span class="quadrant-label">Sprinkler On</span>
+                    </div>
+                    <div class="quadrant" id="quadrant-tr">
+                        <span class="quadrant-icon">🚿</span>
+                        <span class="quadrant-label">Sprinkler On</span>
+                    </div>
+                    <div class="quadrant" id="quadrant-bl">
+                        <span class="quadrant-icon">🚿</span>
+                        <span class="quadrant-label">Sprinkler On</span>
+                    </div>
+                    <div class="quadrant" id="quadrant-br">
+                        <span class="quadrant-icon">🚿</span>
+                        <span class="quadrant-label">Sprinkler On</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="buttons-grid">
+                <button class="action-button" onclick="document.getElementById('photoInput').click()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Upload Photo
+                </button>
+
+                <button class="action-button" onclick="document.getElementById('videoInput').click()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Upload Video
+                </button>
+
+                <button class="action-button" onclick="startDeviceCamera()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Start Camera
+                </button>
+
+                <button class="action-button default" onclick="stopCamera()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Stop/Reset
+                </button>
+            </div>
+
+            <!-- FILE STATUS -->
+            <div id="fileStatus" style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px; display: none; color: white; font-size: 14px;">
+                <strong>Selected:</strong> <span id="fileName"></span>
+                <br>
+                <button class="action-button" onclick="startDetection()" style="width: 100%; margin-top: 12px; padding: 12px;">
+                    ▶ Start Detection
+                </button>
+            </div>
+
+            <!-- DETAILS PANEL -->
+            <div class="details-panel">
+                <div class="details-title">Detection Results</div>
+                <div class="detection-list" id="detectionList">
+                    <div class="no-detections">No detections yet</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HIDDEN INPUTS -->
+    <input type="file" id="photoInput" accept="image/*">
+    <input type="file" id="videoInput" accept="video/*">
+    <video id="videoElement" style="display: none;"></video>
+
+    <!-- LOADING SPINNER -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        // Elements
+        const photoInput = document.getElementById('photoInput');
+        const videoInput = document.getElementById('videoInput');
+        const confidenceSlider = document.getElementById('confidenceSlider');
+        const thresholdValue = document.getElementById('thresholdValue');
+        const detectionCanvas = document.getElementById('detectionCanvas');
+        const resultImage = document.getElementById('resultImage');
+        const framePlaceholder = document.getElementById('framePlaceholder');
+        const detectionList = document.getElementById('detectionList');
+        const alertsList = document.getElementById('alertsList');
+        const totalCount = document.getElementById('totalCount');
+        const lastStat = document.getElementById('lastStat');
+        const modeLabel = document.getElementById('modeLabel');
+        const loading = document.getElementById('loading');
+
+        const quadrantOverlay = document.getElementById('quadrantOverlay');
+        const quadrantMap = {
+            tl: document.getElementById('quadrant-tl'),
+            tr: document.getElementById('quadrant-tr'),
+            bl: document.getElementById('quadrant-bl'),
+            br: document.getElementById('quadrant-br')
+        };
+
+        let deviceMediaStream = null;
+        let deviceCaptureInterval = null;
+        let deviceTrackingSessionId = null;
+        let latestDetections = [];
+        let canvasContext = null;
+        let animationFrameId = null;
+        let totalDetectionCount = 0;
+        let selectedFile = null;
+        let selectedFileType = null; // 'photo' or 'video'
+
+        // Update threshold display
+        confidenceSlider.addEventListener('change', function() {
+            thresholdValue.textContent = parseFloat(this.value).toFixed(2);
+        });
+
+        // Photo upload
+        photoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            selectedFile = file;
+            selectedFileType = 'photo';
+            
+            const fileStatus = document.getElementById('fileStatus');
+            document.getElementById('fileName').textContent = `📷 ${file.name}`;
+            fileStatus.style.display = 'block';
+            modeLabel.textContent = 'Photo Selected';
+        });
+
+        // Video upload
+        videoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            selectedFile = file;
+            selectedFileType = 'video';
+            
+            const fileStatus = document.getElementById('fileStatus');
+            document.getElementById('fileName').textContent = `🎬 ${file.name}`;
+            fileStatus.style.display = 'block';
+            modeLabel.textContent = 'Video Selected';
+        });
+
+        // Start detection
+        async function startDetection() {
+            if (!selectedFile) return;
+
+            loading.style.display = 'block';
+
+            try {
+                if (selectedFileType === 'photo') {
+                    await processPhoto();
+                } else if (selectedFileType === 'video') {
+                    await processVideo();
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                alert('Error during detection: ' + err.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        async function processPhoto() {
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('confidence', parseFloat(confidenceSlider.value));
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.success && data.image) {
+                framePlaceholder.style.display = 'none';
+                resultImage.style.display = 'block';
+                resultImage.src = 'data:image/jpeg;base64,' + data.image;
+                
+                updateDetections(data.detections, data.count);
+            }
+        }
+
+        async function processVideo() {
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+            formData.append('confidence', parseFloat(confidenceSlider.value));
+
+            const response = await fetch('/prepare-video-stream', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                framePlaceholder.style.display = 'none';
+                detectionCanvas.style.display = 'block';
+                resultImage.style.display = 'none';
+                
+                // Create blob URL for the video file
+                const videoUrl = URL.createObjectURL(selectedFile);
+                const videoElement = document.getElementById('videoElement');
+                videoElement.src = videoUrl;
+                videoElement.play();
+
+                deviceTrackingSessionId = 'video_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                canvasContext = detectionCanvas.getContext('2d');
+                latestDetections = [];
+                
+                modeLabel.textContent = 'Video Tracking';
+
+                // Smooth canvas animation loop
+                const drawVideo = () => {
+                    if (videoElement.paused && videoElement.ended) {
+                        console.log('Video playback finished');
+                        return;
+                    }
+
+                    const videoWidth = videoElement.videoWidth;
+                    const videoHeight = videoElement.videoHeight;
+                    if (videoWidth && videoHeight) {
+                        detectionCanvas.width = videoWidth;
+                        detectionCanvas.height = videoHeight;
+
+                        canvasContext.drawImage(videoElement, 0, 0, videoWidth, videoHeight);
+
+                        // Draw detections if available
+                        if (latestDetections.length > 0) {
+                            latestDetections.forEach(det => {
+                                const bbox = det.bbox;
+                                const trackLabel = det.track_id >= 0 ? `[ID: ${det.track_id}]` : '';
+                                const label = `Peacock ${(det.confidence * 100).toFixed(0)}% ${trackLabel}`;
+
+                                canvasContext.strokeStyle = '#10b981';
+                                canvasContext.lineWidth = 3;
+                                canvasContext.strokeRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
+
+                                canvasContext.fillStyle = '#10b981';
+                                canvasContext.font = 'bold 14px Arial';
+                                const textWidth = canvasContext.measureText(label).width;
+                                canvasContext.fillRect(bbox[0], Math.max(bbox[1] - 26, 0), textWidth + 8, 22);
+
+                                canvasContext.fillStyle = '#000';
+                                canvasContext.fillText(label, bbox[0] + 4, bbox[1] - 6);
+                            });
+                        }
+                    }
+                    animationFrameId = requestAnimationFrame(drawVideo);
+                };
+                drawVideo();
+
+                // Background inference loop for tracking
+                const captureAndSend = async () => {
+                    if (!videoElement || videoElement.paused && videoElement.ended) return;
+
+                    const videoWidth = videoElement.videoWidth;
+                    const videoHeight = videoElement.videoHeight;
+                    if (!videoWidth || !videoHeight) return;
+
+                    const inferenceCanvas = document.createElement('canvas');
+                    inferenceCanvas.width = videoWidth;
+                    inferenceCanvas.height = videoHeight;
+                    inferenceCanvas.getContext('2d').drawImage(videoElement, 0, 0);
+
+                    inferenceCanvas.toBlob(async (blob) => {
+                        if (!blob) return;
+
+                        const formData = new FormData();
+                        formData.append('image', blob, 'frame.jpg');
+                        formData.append('confidence', parseFloat(confidenceSlider.value));
+                        formData.append('session_id', deviceTrackingSessionId);
+
+                        try {
+                            const response = await fetch('/track-frame', {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            const data = await response.json();
+                            if (data.success) {
+                                latestDetections = data.detections;
+                                updateDetections(data.detections, data.count);
+                            }
+                        } catch (err) {
+                            console.error('Error:', err);
+                        }
+                    }, 'image/jpeg', 0.8);  // Higher JPEG quality for better detection
+                };
+
+                if (deviceCaptureInterval) clearInterval(deviceCaptureInterval);
+                deviceCaptureInterval = setInterval(captureAndSend, 500);  // 500ms for better quality
+
+                updateDetections(data.detections || [], data.count || 0);
+            }
+        }
+
+        // Camera detection
+        async function startDeviceCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Camera access not supported');
+                return;
+            }
+
+            try {
+                modeLabel.textContent = 'Live Camera';
+                deviceTrackingSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+                framePlaceholder.style.display = 'none';
+                detectionCanvas.style.display = 'block';
+
+                deviceMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+
+                const videoElement = document.createElement('video');
+                videoElement.srcObject = deviceMediaStream;
+                videoElement.autoplay = true;
+                videoElement.playsinline = true;
+                videoElement.style.display = 'none';
+                document.body.appendChild(videoElement);
+
+                canvasContext = detectionCanvas.getContext('2d');
+                latestDetections = [];
+
+                // Animation loop
+                const drawVideo = () => {
+                    if (!deviceMediaStream) return;
+
+                    const videoWidth = videoElement.videoWidth;
+                    const videoHeight = videoElement.videoHeight;
+                    if (videoWidth && videoHeight) {
+                        detectionCanvas.width = videoWidth;
+                        detectionCanvas.height = videoHeight;
+
+                        canvasContext.drawImage(videoElement, 0, 0, videoWidth, videoHeight);
+
+                        if (latestDetections.length > 0) {
+                            latestDetections.forEach(det => {
+                                const bbox = det.bbox;
+                                const label = `Peacock ${(det.confidence * 100).toFixed(0)}%`;
+
+                                canvasContext.strokeStyle = '#10b981';
+                                canvasContext.lineWidth = 3;
+                                canvasContext.strokeRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
+
+                                canvasContext.fillStyle = '#10b981';
+                                canvasContext.font = '14px Arial';
+                                const textWidth = canvasContext.measureText(label).width;
+                                canvasContext.fillRect(bbox[0], Math.max(bbox[1] - 24, 0), textWidth + 8, 20);
+
+                                canvasContext.fillStyle = '#000';
+                                canvasContext.fillText(label, bbox[0] + 4, bbox[1] - 6);
+                            });
+                        }
+                    }
+                    animationFrameId = requestAnimationFrame(drawVideo);
+                };
+                drawVideo();
+
+                // Inference loop
+                const captureAndSend = async () => {
+                    if (!deviceMediaStream) return;
+
+                    const videoWidth = videoElement.videoWidth;
+                    const videoHeight = videoElement.videoHeight;
+                    if (!videoWidth || !videoHeight) return;
+
+                    const inferenceCanvas = document.createElement('canvas');
+                    inferenceCanvas.width = videoWidth;
+                    inferenceCanvas.height = videoHeight;
+                    inferenceCanvas.getContext('2d').drawImage(videoElement, 0, 0);
+
+                    inferenceCanvas.toBlob(async (blob) => {
+                        if (!blob) return;
+
+                        const formData = new FormData();
+                        formData.append('image', blob, 'frame.jpg');
+                        formData.append('confidence', parseFloat(confidenceSlider.value));
+                        formData.append('session_id', deviceTrackingSessionId);
+
+                        try {
+                            const response = await fetch('/track-frame', {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            const data = await response.json();
+                            if (data.success) {
+                                latestDetections = data.detections;
+                                updateDetections(data.detections, data.count);
+                            }
+                        } catch (err) {
+                            console.error('Error:', err);
+                        }
+                    }, 'image/jpeg', 0.8);  // Higher JPEG quality for better detection
+                };
+
+                if (deviceCaptureInterval) clearInterval(deviceCaptureInterval);
+                deviceCaptureInterval = setInterval(captureAndSend, 500);  // 500ms for better quality
+
+            } catch (err) {
+                console.error('Error:', err);
+                alert('Could not access camera: ' + err.message);
+            }
+        }
+
+        function stopCamera() {
+            if (deviceCaptureInterval) clearInterval(deviceCaptureInterval);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            if (deviceMediaStream) {
+                deviceMediaStream.getTracks().forEach(t => t.stop());
+                deviceMediaStream = null;
+            }
+            
+            const videoElement = document.getElementById('videoElement');
+            if (videoElement.src) {
+                videoElement.pause();
+                videoElement.src = '';
+            }
+
+            detectionCanvas.style.display = 'none';
+            resultImage.style.display = 'none';
+            framePlaceholder.style.display = 'block';
+            
+            detectionList.innerHTML = '<div class="no-detections">No detections yet</div>';
+            modeLabel.textContent = 'Ready';
+
+            // Reset sprinkler quadrants
+            resetQuadrants();
+        }
+
+        function updateDetections(detections, count) {
+            totalDetectionCount = Math.max(totalDetectionCount, count);
+            totalCount.textContent = totalDetectionCount;
+            lastStat.textContent = count;
+
+            if (count > 0) {
+                // Update alerts with more detail
+                const alertHtml = detections.map((det) => {
+                    const idLabel = det.track_id >= 0 ? ` ID:${det.track_id}` : '';
+                    return `<div class="alert-item">🦚 Peacock${idLabel} - ${(det.confidence * 100).toFixed(0)}%</div>`
+                }).join('');
+                alertsList.innerHTML = alertHtml;
+
+                // Update detection list with enhanced display
+                const html = detections.map((det, idx) => {
+                    const trackLabel = det.track_id >= 0 ? ` [ID: ${det.track_id}]` : '';
+                    const coords = det.bbox ? `<br>X: ${Math.round(det.bbox[0])}, Y: ${Math.round(det.bbox[1])}` : '';
+                    return `
+                        <div class="detection-item">
+                            <strong>🦚 #${idx + 1}${trackLabel}</strong><br>
+                            Confidence: ${(det.confidence * 100).toFixed(0)}%${coords}
+                        </div>
+                    `;
+                }).join('');
+                detectionList.innerHTML = html;
+                
+                // Log to console for debugging
+                console.log(`✅ Tracking ${count} peacock(s)`, detections);
+            } else {
+                alertsList.innerHTML = '<div style="color: var(--text-light); font-size: 12px; text-align: center; padding: 20px 0;">No peacocks detected</div>';
+                detectionList.innerHTML = '<div class="no-detections">No detections in this frame</div>';
+            }
+
+            // Update quadrant-based sprinklers
+            updateQuadrantSprinklers(detections || []);
+        }
+
+        function resetQuadrants() {
+            Object.values(quadrantMap).forEach(q => {
+                if (q) q.classList.remove('active');
+            });
+        }
+
+        function updateQuadrantSprinklers(detections) {
+            resetQuadrants();
+
+            if (!detectionCanvas || detectionCanvas.style.display === 'none') {
+                return;
+            }
+
+            const width = detectionCanvas.width;
+            const height = detectionCanvas.height;
+
+            if (!width || !height) {
+                return;
+            }
+
+            detections.forEach(det => {
+                if (!det.bbox || det.bbox.length < 4) return;
+
+                const [x1, y1, x2, y2] = det.bbox;
+                const centerX = (x1 + x2) / 2;
+                const centerY = (y1 + y2) / 2;
+
+                let key = null;
+                if (centerX < width / 2 && centerY < height / 2) {
+                    key = 'tl';
+                } else if (centerX >= width / 2 && centerY < height / 2) {
+                    key = 'tr';
+                } else if (centerX < width / 2 && centerY >= height / 2) {
+                    key = 'bl';
+                } else if (centerX >= width / 2 && centerY >= height / 2) {
+                    key = 'br';
+                }
+
+                if (key && quadrantMap[key]) {
+                    quadrantMap[key].classList.add('active');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
