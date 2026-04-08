@@ -9,3 +9,4 @@ pillow
 
 lap
 flask_cors
+python-dotenv

@@ -9,15 +9,21 @@ import threading
 import time
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+load_dotenv()  # load variables from .env if present
 
 model = YOLO("model/best_peacock_model_v3.pt")  # your baseline model
 VIDEO_INPUT_DIR = "./data/videos_in"
 VIDEO_OUTPUT_DIR = "./data/videos_out"
 STREAM_SESSIONS = {}
 TRACKER_SESSIONS = {}  # Store tracker state for each device camera session
+
+# Application mode: 'lite' (Hugging Face Space) or 'full' (local with video/realtime)
+APP_MODE = os.getenv("APP_MODE", "full")
 
 os.makedirs(VIDEO_INPUT_DIR, exist_ok=True)
 os.makedirs(VIDEO_OUTPUT_DIR, exist_ok=True)
@@ -26,6 +32,14 @@ os.makedirs(VIDEO_OUTPUT_DIR, exist_ok=True)
 def home():
     with open('index.html', 'r', encoding='utf-8') as f:
         return f.read()
+
+
+@app.route("/config", methods=["GET"])
+def get_config():
+    """Expose minimal runtime configuration to the frontend."""
+    return jsonify({
+        "app_mode": APP_MODE
+    })
 
 @app.route("/predict", methods=["POST"])
 def predict():

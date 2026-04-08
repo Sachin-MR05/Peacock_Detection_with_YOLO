@@ -570,14 +570,14 @@
                     Upload Photo
                 </button>
 
-                <button class="action-button" onclick="document.getElementById('videoInput').click()">
+                <button class="action-button" onclick="handleUploadVideoClick()">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                     Upload Video
                 </button>
 
-                <button class="action-button" onclick="startDeviceCamera()">
+                <button class="action-button" onclick="handleStartCameraClick()">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
@@ -622,6 +622,26 @@
     </div>
 
     <script>
+        // App mode: will be overridden from /config; default 'lite' for safety
+        let APP_MODE = 'lite';
+
+        // Fetch runtime config (e.g., APP_MODE) from backend
+        fetch('/config')
+            .then(res => res.json())
+            .then(cfg => {
+                if (cfg && cfg.app_mode) {
+                    APP_MODE = cfg.app_mode;
+                    console.log('APP_MODE =', APP_MODE);
+                }
+            })
+            .catch(() => {
+                // If /config fails, keep default APP_MODE
+            });
+
+        function isFullMode() {
+            return APP_MODE === 'full';
+        }
+
         // Elements
         const photoInput = document.getElementById('photoInput');
         const videoInput = document.getElementById('videoInput');
@@ -654,6 +674,10 @@
         let totalDetectionCount = 0;
         let selectedFile = null;
         let selectedFileType = null; // 'photo' or 'video'
+
+        function showLiteModeMessage() {
+            alert('clone the repo from:\nhttps://github.com/Sachin-MR05/Peacock_Detection_with_YOLO\nand change APP_MODE to "full" for full access');
+        }
 
         // Update threshold display
         confidenceSlider.addEventListener('change', function() {
@@ -688,6 +712,14 @@
             modeLabel.textContent = 'Video Selected';
         });
 
+        function handleUploadVideoClick() {
+            if (!isFullMode()) {
+                showLiteModeMessage();
+                return;
+            }
+            document.getElementById('videoInput').click();
+        }
+
         // Start detection
         async function startDetection() {
             if (!selectedFile) return;
@@ -698,6 +730,10 @@
                 if (selectedFileType === 'photo') {
                     await processPhoto();
                 } else if (selectedFileType === 'video') {
+                    if (!isFullMode()) {
+                        showLiteModeMessage();
+                        return;
+                    }
                     await processVideo();
                 }
             } catch (err) {
@@ -729,6 +765,10 @@
         }
 
         async function processVideo() {
+            if (!isFullMode()) {
+                showLiteModeMessage();
+                return;
+            }
             const formData = new FormData();
             formData.append('video', selectedFile);
             formData.append('confidence', parseFloat(confidenceSlider.value));
@@ -839,6 +879,14 @@
 
                 updateDetections(data.detections || [], data.count || 0);
             }
+        }
+
+        function handleStartCameraClick() {
+            if (!isFullMode()) {
+                showLiteModeMessage();
+                return;
+            }
+            startDeviceCamera();
         }
 
         // Camera detection
