@@ -27,8 +27,13 @@ ENV PORT=7860
 # You can override this in the Space settings to "full" if desired.
 ENV APP_MODE=lite
 
+# Configure Flask entrypoint
+ENV FLASK_APP=app:app
+ENV FLASK_RUN_HOST=0.0.0.0
+ENV FLASK_RUN_PORT=7860
+
 # Expose port (useful for local Docker runs)
 EXPOSE 7860
 
-# Start the Flask app bound to 0.0.0.0:$PORT so Spaces can reach it
-CMD ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=7860", "--app=app:app"]
+# Start the Flask app; older Flask versions don't support --app flag
+CMD ["python", "-m", "flask", "run"]
